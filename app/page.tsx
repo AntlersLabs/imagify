@@ -1,103 +1,182 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState, useEffect } from "react"
+import { ImageUploader } from "@/components/image-uploader"
+import { ImageProcessor } from "@/components/image-processor"
+import { ImageResults } from "@/components/image-results"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { FileImage, Settings, AlertTriangle, Archive } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { checkWebPSupport } from "@/components/image-processor"
+
+export default function ImageOptimizer() {
+  const [files, setFiles] = useState<File[]>([])
+  const [processedImages, setProcessedImages] = useState<
+    Array<{
+      original: { name: string; size: number; url: string }
+      optimized: { name: string; size: number; url: string }
+      compressionRate: number
+    }>
+  >([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [quality, setQuality] = useState(80)
+  const [webpSupported, setWebpSupported] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    // Check WebP support when component mounts
+    const checkSupport = async () => {
+      const isSupported = await checkWebPSupport()
+      setWebpSupported(isSupported)
+    }
+
+    checkSupport()
+  }, [])
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="container mx-auto py-10 px-4 max-w-5xl">
+      <div className="flex flex-col items-center text-center mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Anime Jersey BD Image Optimizer</h1>
+        <p className="text-muted-foreground mt-2 max-w-2xl">
+          Compress multiple images at once and convert them to WebP format for optimal web performance.
+          <span className="block mt-1 text-sm">System designed by Antlers Labs</span>
+        </p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      {webpSupported === false && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Browser Compatibility Issue</AlertTitle>
+          <AlertDescription>
+            Your browser {"doesn't"} support WebP format. The optimizer will still work, but you may not be able to preview
+            the optimized images.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsTrigger value="upload">
+            <FileImage className="mr-2 h-4 w-4" />
+            Upload & Optimize
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upload" className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Images</CardTitle>
+              <CardDescription>Select multiple images to optimize. Supported formats: JPG, PNG, GIF.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ImageUploader files={files} setFiles={setFiles} isProcessing={isProcessing} />
+            </CardContent>
+          </Card>
+
+          {files.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Process Images</CardTitle>
+                <CardDescription>Convert your images to WebP format and compress them.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ImageProcessor
+                  files={files}
+                  setProcessedImages={setProcessedImages}
+                  isProcessing={isProcessing}
+                  setIsProcessing={setIsProcessing}
+                  quality={quality}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {processedImages.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Results</CardTitle>
+                <CardDescription>Compare original and optimized images. Download all as a ZIP file.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ImageResults processedImages={processedImages} />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>Optimization Settings</CardTitle>
+              <CardDescription>Configure how your images will be optimized.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <label htmlFor="quality" className="text-sm font-medium">
+                    WebP Quality: {quality}%
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    {quality < 50 ? "Higher Compression" : quality > 80 ? "Higher Quality" : "Balanced"}
+                  </span>
+                </div>
+                <input
+                  id="quality"
+                  type="range"
+                  min="20"
+                  max="100"
+                  value={quality}
+                  onChange={(e) => setQuality(Number.parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lower quality = smaller file size, but may affect image appearance.
+                </p>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-medium mb-2">About WebP Format</h3>
+                <p className="text-sm text-muted-foreground">
+                  WebP is a modern image format that provides superior lossless and lossy compression for images on the
+                  web. WebP images are typically 25-35% smaller than comparable JPEG or PNG images.
+                </p>
+              </div>
+
+              <div className="bg-muted p-4 rounded-md mt-4">
+                <h3 className="font-medium mb-2">Browser-Based Processing</h3>
+                <p className="text-sm text-muted-foreground">
+                  This tool uses your {"browser's"} Canvas API to process images. All processing happens locally in your
+                  browser - no images are uploaded to any server.
+                </p>
+              </div>
+
+              <div className="bg-muted p-4 rounded-md mt-4">
+                <h3 className="font-medium mb-2 flex items-center">
+                  <Archive className="mr-2 h-4 w-4" />
+                  Batch Download
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  After processing, you can download all optimized images as a single ZIP file. The ZIP file includes
+                  all your optimized WebP images in a folder structure.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      <footer className="mt-12 pt-6 border-t text-center">
+        <p className="text-sm text-muted-foreground">
+          Anime Jersey BD image optimizer, System designed by Antlers Labs
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">&copy; {new Date().getFullYear()} All rights reserved</p>
       </footer>
     </div>
-  );
+  )
 }
